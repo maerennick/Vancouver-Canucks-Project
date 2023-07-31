@@ -157,7 +157,7 @@ shots_2022<- read_csv(here("MP_data", "CAN_shots_2022.csv"))
 
 shot_data<- rbind(shots_2009, shots_2010, shots_2011, shots_2012, shots_2013, shots_2014, shots_2015, shots_2016, shots_2017, shots_2018, shots_2019, shots_2020, shots_2021, shots_2022)
 
-canucks_shot_data<- read_csv(here("MP_data", "shots_2007-2021.csv")) %>% 
+canucks_shot_data<- shot_data %>% 
   filter(homeTeamCode== "VAN" | awayTeamCode == "VAN")
 
 
