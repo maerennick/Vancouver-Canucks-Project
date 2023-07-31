@@ -39,6 +39,7 @@ This report will be using the following metrics to measure team success through 
 - Time on Ice (TOI)
 - Games Played (GP)
 - Corsi For = Shot attempts for at even strength: Shots + Blocks + Misses (CF)
+- Corsi Against = Corsi score of the opposing team (CA)
 - Goals For (GF)
 - Penalty minutes served (PENT)
 - Penalty minutes drawn (PEND)
@@ -177,7 +178,7 @@ nhl_team_data <- rbind(teams_2007_2016, teams_2017_2023)
 
 ```{r}
 
-## Data Preperation
+## Data Preparation
 
 canucks_data <-  nhl_team_data %>%
   clean_names() %>% 
@@ -229,6 +230,9 @@ canucks_team_data<- canucks_data %>%
   rename(REB= rebounds_for)
 
 
+canucks_team_data_avg<- canucks_team_data %>% 
+  group_by(season) %>% 
+  summarise(across(where(is.numeric), mean, na.rm = TRUE))
 
 # Print data 
 #kable(canucks_team_data) %>%
@@ -238,7 +242,7 @@ canucks_team_data<- canucks_data %>%
 ```
 
 
-##### Z-Scores
+##### Calculate Z-Scores
 
 1. Adjust all scores by the number of games played due to a shorted 2012-2013 and 2020-2021 seasons
 
@@ -249,8 +253,8 @@ canucks_team_data$GP <- as.numeric(canucks_team_data$GP)
 canucks_team_data$season <- as.numeric(canucks_team_data$season)
 
 # Pre-processes, adjusts, and z-scores canucks data ----
-canucks_data_long <- canucks_team_data %>% 
-  dplyr::select(-team, -name, -player_team, -home_or_away, -game_date, -position, -situation, -game_id, -opposing_team, -opposing_ice_time, -missed_shots_for, -opposing_shots_on_goal,-rebound_goals_for, -missed_shots_for, -x_on_goal_for, -penalties_served, -penalties_drawn, -opposing_rebound_goals, -shot_attempts_for) %>% 
+canucks_data_long <- canucks_team_data_avg %>% 
+  dplyr::select( -game_date, -game_id, -opposing_ice_time, -missed_shots_for, -opposing_shots_on_goal,-rebound_goals_for, -missed_shots_for, -x_on_goal_for, -penalties_served, -penalties_drawn, -opposing_rebound_goals, -shot_attempts_for) %>% 
   gather(Meas, Val, -season, -GP) %>%
   group_by(Meas) %>%
   mutate(Val_Adj = Val/GP,               # adjusts based on games played
@@ -280,6 +284,9 @@ ggplot(canucks_data_long, aes(factor(season), Val_Zscore)) +
         )+
   facet_wrap(~Meas, nrow = 5)
 ```
+
+
+For the Vancouver Canucks, several performance metrics peaked in 2012 season. The 2012–13 Vancouver Canucks season was the team's 43rd season in the National Hockey League and the Canucks won their fifth-straight Northwest Division title but finished third in the Western Conference. Corsi scores against and the amount of penalties served additionally peaked that year suggesting that they were facing strong competition. The 2020 season was additionally significant. This season was unconventional due to the COVID-19 shutdowns, which is likely why there is no peak in time on ice and could result in false peask due to the few numbers of games that were played. 
 
 ##### Correlations
 
@@ -332,6 +339,9 @@ ggplot(canucks_cors_long, aes(x = Var1, y = Var2, fill = value)) +
                        name = "Correlation"
                        )
 ```
+
+Season has a negative correlation with the number of penalties both drawn and received as well as corsi scores for. This suggests that through time, the Vancouver Canucks have steered away from play that would result in penalties. However, it also suggests that through time, the Canucks are taking less shots on goal and exhibiting less shot strength. There is a noticeable positive correlation between corsi scores and goals, which we would expect to see and time on ice with several of these metrics which we would also expect to see. Noticeably, there is no correlation between penalties taken or drawn and the amount of goals scored, which could explain why Vancouver may have strategically diverted from a rougher style of play. 
+
 
 ### Powerplay Analysis
 
@@ -404,6 +414,9 @@ ggplot(pp_season, aes(season, goalsFor/games_played, group = 1)) +
 
 ```
 
+There is a lot of variation across power play success through time across teams and across divisions. On average, success appears to be relatively consistent through time with the exception of the steep dip in the first few seasons. This could be due to improved team strategy, defense and/or goalie ability through time. 
+
+
 #### Model powerplay success through time
 
 This model ignores the conference and division distinction. Each team will be modeled individually using a linear regression to predict powerplay goals per games played as a function of time (across 10 years). There are 30 teams in this dataset. Therefore, 30 distinct linear regressions will be performed; one for each team in the NHL. This allows us account for the variability of power plays within each team.
@@ -446,6 +459,8 @@ ggplot(level1Omni, aes(r.squared, reorder(team, r.squared), color = sig)) +
 
 ```
 
+All but two of the regressions are significant, with Atlanta having the strongest relationship between powerplay success and time. While significant, the Vancouver cnaucks have a lower R^2 value suggesting there is a lot of variability in the data that cannot be explained or predicted by the regression. 
+
 ##### Directionality of trends in powerplay success through time across teams
 
 ```{r}
@@ -476,6 +491,7 @@ ggplot(level1Coef, aes(estimate, reorder(team, -1*estimate), color = sig)) +
 
 ```
 
+This figure looks at the directionality of powerplay success through time. Atlanta had the best fitting model and additionally has the most negative correlation, suggesting that there powerplay success has gone down significantly through time. The Vancouver Canucks have one of the shallower rates of change, but exhibit a negative trajectory in powerplay success through time. 
 
 ##### Trends in Canucks powerplay success through time
 
@@ -498,6 +514,9 @@ ggplot(model_data, aes(x = season, y = goalsFor_per_game)) +
        y = "Average Power Play Goals per Game") +
   theme_minimal()
 ```
+
+As predicted by the R^2 value, there is a lot of variation in the data that is not well described by the model. However, we do see a decline in powerplay success on average through time. 
+
 
 ### Random Forest: scoring for the Vancouver Canucks
 
@@ -534,6 +553,7 @@ vip_goal_rf<- vip(goal_rf)
 vip(goal_rf)
 ```
 
+Interestingly, time on ice was the most important determinor in goal success, followed by distance of shot. This suggests that the stamina and/or fatigue of the palyer is even more important than where they are on the ice and how far away they are from the net. 
 
 ```{r}
 actual_values <- as.numeric(as.character(can_shot_data$goal))
@@ -555,6 +575,9 @@ ggplot(data_plot, aes(x = Values, y = Goals, fill = Values)) +
   theme_minimal()
 
 ```
+
+The amount of actual goals is well reflected by the predictions of the random forrest algorithm.
+
 
 ### Best Shooters on the Canucks Ranked
 
