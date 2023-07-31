@@ -343,7 +343,7 @@ ggplot(canucks_cors_long, aes(x = Var1, y = Var2, fill = value)) +
 Season has a negative correlation with the number of penalties both drawn and received as well as corsi scores for. This suggests that through time, the Vancouver Canucks have steered away from play that would result in penalties. However, it also suggests that through time, the Canucks are taking less shots on goal and exhibiting less shot strength. There is a noticeable positive correlation between corsi scores and goals, which we would expect to see and time on ice with several of these metrics which we would also expect to see. Noticeably, there is no correlation between penalties taken or drawn and the amount of goals scored, which could explain why Vancouver may have strategically diverted from a rougher style of play. 
 
 
-### Power play Analysis
+### Power Play Analysis
 
 A "power play" is a sporting term used to describe a period of play where one team has a numerical advantage in players, usually due to a rule violation by the opposing team. In Hockey, they are considered to be a prime opportunity for scoring. Particularly for the Vancouver Canucks, successful power plays, resulting in a goal, is considered to be a main reason for the team's success. 
 
