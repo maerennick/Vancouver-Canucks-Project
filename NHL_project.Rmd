@@ -19,7 +19,7 @@ This report includes three parts:
 
 1. Statistics through time at the team-level 
 
-2. Modeling Vancouver Canucks powerplay success through time
+2. Modeling Vancouver Canucks power play success through time
 
 3. Random Forest analysis to identify most influential metrics in determining whether a goal is scored in a given scenario, and determine the best shooter on the Canucks
 
@@ -343,9 +343,9 @@ ggplot(canucks_cors_long, aes(x = Var1, y = Var2, fill = value)) +
 Season has a negative correlation with the number of penalties both drawn and received as well as corsi scores for. This suggests that through time, the Vancouver Canucks have steered away from play that would result in penalties. However, it also suggests that through time, the Canucks are taking less shots on goal and exhibiting less shot strength. There is a noticeable positive correlation between corsi scores and goals, which we would expect to see and time on ice with several of these metrics which we would also expect to see. Noticeably, there is no correlation between penalties taken or drawn and the amount of goals scored, which could explain why Vancouver may have strategically diverted from a rougher style of play. 
 
 
-### Powerplay Analysis
+### Power play Analysis
 
-A "powerplay" is a sporting term used to describe a period of play where one team has a numerical advantage in players, usually due to a rule violation by the opposing team. In Hockey, they are considered to be a prime opportunity for scoring. Particularly for the Vancouver Canucks, successful powerplays, resulting in a goal, is considered to be a main reason for the team's success. 
+A "power play" is a sporting term used to describe a period of play where one team has a numerical advantage in players, usually due to a rule violation by the opposing team. In Hockey, they are considered to be a prime opportunity for scoring. Particularly for the Vancouver Canucks, successful power plays, resulting in a goal, is considered to be a main reason for the team's success. 
 
 ##### Read about: [Five key Canucks are contributing to power play success](https://thecanuckway.com/2019/11/27/five-key-canucks-contributing-powerplay-success/)
 
@@ -398,7 +398,7 @@ pp_season<- pp %>%
 ```
 
 
-##### Average powerplay goals across divisions
+##### Average power play goals across divisions
 ```{r}
 ggplot(pp_season, aes(season, goalsFor/games_played, group = 1)) +
   geom_line(aes(group = team, color = division), alpha = 2/3) + 
@@ -417,11 +417,11 @@ ggplot(pp_season, aes(season, goalsFor/games_played, group = 1)) +
 There is a lot of variation across power play success through time across teams and across divisions. On average, success appears to be relatively consistent through time with the exception of the steep dip in the first few seasons. This could be due to improved team strategy, defense and/or goalie ability through time. 
 
 
-#### Model powerplay success through time
+#### Model power play success through time
 
-This model ignores the conference and division distinction. Each team will be modeled individually using a linear regression to predict powerplay goals per games played as a function of time (across 10 years). There are 30 teams in this dataset. Therefore, 30 distinct linear regressions will be performed; one for each team in the NHL. This allows us account for the variability of power plays within each team.
+This model ignores the conference and division distinction. Each team will be modeled individually using a linear regression to predict power play goals per games played as a function of time (across 10 years). There are 30 teams in this dataset. Therefore, 30 distinct linear regressions will be performed; one for each team in the NHL. This allows us account for the variability of power plays within each team.
 
-We’ll use these omnibus estimates to examine all regression models simultaneously via R2 estimates. These allow us to see how much variability in powerplay goals per games played was explained by time:
+We’ll use these omnibus estimates to examine all regression models simultaneously via R2 estimates. These allow us to see how much variability in power play goals per games played was explained by time:
 
 ```{r}
 
@@ -459,9 +459,9 @@ ggplot(level1Omni, aes(r.squared, reorder(team, r.squared), color = sig)) +
 
 ```
 
-All but two of the regressions are significant, with Atlanta having the strongest relationship between powerplay success and time. While significant, the Vancouver cnaucks have a lower R^2 value suggesting there is a lot of variability in the data that cannot be explained or predicted by the regression. 
+All but two of the regressions are significant, with Atlanta having the strongest relationship between power play success and time. While significant, the Vancouver cnaucks have a lower R^2 value suggesting there is a lot of variability in the data that cannot be explained or predicted by the regression. 
 
-##### Directionality of trends in powerplay success through time across teams
+##### Directionality of trends in power play success through time across teams
 
 ```{r}
 # Extracting level 1 coefficients
@@ -491,9 +491,9 @@ ggplot(level1Coef, aes(estimate, reorder(team, -1*estimate), color = sig)) +
 
 ```
 
-This figure looks at the directionality of powerplay success through time. Atlanta had the best fitting model and additionally has the most negative correlation, suggesting that there powerplay success has gone down significantly through time. The Vancouver Canucks have one of the shallower rates of change, but exhibit a negative trajectory in powerplay success through time. 
+This figure looks at the directionality of power play success through time. Atlanta had the best fitting model and additionally has the most negative correlation, suggesting that there power play success has gone down significantly through time. The Vancouver Canucks have one of the shallower rates of change, but exhibit a negative trajectory in power play success through time. 
 
-##### Trends in Canucks powerplay success through time
+##### Trends in Canucks power play success through time
 
 ```{r}
 
@@ -515,7 +515,7 @@ ggplot(model_data, aes(x = season, y = goalsFor_per_game)) +
   theme_minimal()
 ```
 
-As predicted by the R^2 value, there is a lot of variation in the data that is not well described by the model. However, we do see a decline in powerplay success on average through time. 
+As predicted by the R^2 value, there is a lot of variation in the data that is not well described by the model. However, we do see a decline in power play success on average through time. 
 
 
 ### Random Forest: scoring for the Vancouver Canucks
