@@ -127,3 +127,21 @@ wpc = Intercept + coef x pyth
 
 - For every one unit increase in pyth, the value of wpc goes up by 1.33
 - Pythagorean Expectation can account for 81.5% of the variation in win percentage
+
+
+```{r}
+
+# Create the linear regression model
+pyth_lm <- lm(wpc ~ pyth, data = NHL22)
+
+# Create a scatter plot with regression line using ggplot2
+regression_plot <- ggplot(NHL22, aes(x = pyth, y = wpc)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +
+  labs(x = "Pyth", y = "Winning Percentage", title = "Regression: wpc ~ pyth") +
+  theme_minimal()
+
+# Print the plot
+print(regression_plot)
+```
+
