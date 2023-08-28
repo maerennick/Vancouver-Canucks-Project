@@ -13,6 +13,12 @@ editor_options:
   chunk_output_type: console
 ---
 
+A Pythagorean expectation is a statistic used to measure how many wins a team should expect, based on how many points they score and how many they allow.
+
+THis investigation delves into the insights offered by the 2022 season's data, revealing the close correlation between points metrics and actual performance. This analysis uncovers teams that exceeded or fell short of projected outcomes, exposing the factors contributing to these deviations. By focusing on Pythagorean Expectation, enthusiasts can uncover the underlying dynamics that impact a team's success, providing a fresh and insightful perspective on the world of sports.
+
+
+
 ```{r setup, include=FALSE, warning= FALSE, message= FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning= FALSE, message= FALSE)
 
@@ -104,13 +110,13 @@ NHL22$W <- NHL22$hwin + NHL22$awin
 NHL22$G <- NHL22$Gh + NHL22$Ga
 NHL22$R <- NHL22$home_team_goals_h + NHL22$away_team_goals_a
 NHL22$RA <- NHL22$away_team_goals_h + NHL22$home_team_goals_a
-NHL22
+#NHL22
 
 #define win percentage and the Pythagorean Expectation
 
 NHL22$wpc <- NHL22$W / NHL22$G
 NHL22$pyth <- NHL22$R^2 / (NHL22$R^2 + NHL22$RA^2)
-NHL22
+#NHL22
 
 
 ## regression
@@ -143,5 +149,142 @@ regression_plot <- ggplot(NHL22, aes(x = pyth, y = wpc)) +
 
 # Print the plot
 print(regression_plot)
+
+
+
+### comparing teams 
+
+# Create a scatter plot with regression line for each team
+regression_plot <- ggplot(NHL22, aes(x = pyth, y = wpc, label = team)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "lightblue") +
+  geom_text_repel(
+    nudge_x = 0.02, nudge_y = 0.005,
+    segment.size = 0.2, segment.color = "grey50"
+  ) +
+  labs(x = "Pyth", y = "Winning Percentage", title = "Regression: wpc ~ pyth") +
+  theme_minimal()
+
+# Print the plot
+print(regression_plot)
+
+
 ```
 
+### PE for all seasons
+
+
+```{r}
+
+## What we need in the data frame: 
+
+# identity of team 
+# points scored
+# poitns scored against them
+# aggregate of thos values across the entire season 
+
+pe_nhl<- shot_data %>% 
+  #filter(season == 2022) %>% 
+  clean_names() %>% 
+  select(home_team_code, away_team_code, home_team_goals, away_team_goals, game_id)
+
+## variable where 1 --> if home team won the game and 0 --> if away team didnt win the game 
+
+pe_nhl_score<- pe_nhl %>% 
+  group_by(game_id) %>% 
+  mutate(hwin = case_when (sum(home_team_goals)> sum(away_team_goals) ~ 1,
+                           sum(away_team_goals)>sum(home_team_goals)  ~ 0)) %>% 
+  mutate(awin = case_when (sum(home_team_goals)< sum(away_team_goals) ~ 1,
+                           sum(away_team_goals)<sum(home_team_goals)  ~ 0)) %>% 
+  mutate(count =1)
+
+
+### aggregation 
+
+nhl_home<- pe_nhl_score %>% ### record of the team as a home team
+group_by(home_team_code) %>% 
+  summarise(hwin = sum(hwin),
+            home_team_goals = sum(home_team_goals),
+            away_team_goals = sum(away_team_goals),
+            count = sum(count)) %>%
+  rename(team = home_team_code, away_team_goals_h = away_team_goals, home_team_goals_h = home_team_goals, Gh = count)
+
+nhl_away<- pe_nhl_score %>% ### record of the team as an away team 
+  group_by(away_team_code) %>% 
+  summarise(awin = sum(awin),
+            home_team_goals = sum(home_team_goals),
+            away_team_goals = sum(away_team_goals),
+            count = sum(count)) %>%
+  rename(team = away_team_code, away_team_goals_a = away_team_goals, home_team_goals_a = home_team_goals, Ga = count)
+
+
+NHL22 <- merge(nhl_home, nhl_away, by = "team")
+
+
+# Now we create the total wins, games, played, runs scored and run conceded by summing the totals as home team and away team
+
+
+NHL22$W <- NHL22$hwin + NHL22$awin
+NHL22$G <- NHL22$Gh + NHL22$Ga
+NHL22$R <- NHL22$home_team_goals_h + NHL22$away_team_goals_a
+NHL22$RA <- NHL22$away_team_goals_h + NHL22$home_team_goals_a
+#NHL22
+
+#define win percentage and the Pythagorean Expectation
+
+NHL22$wpc <- NHL22$W / NHL22$G
+NHL22$pyth <- NHL22$R^2 / (NHL22$R^2 + NHL22$RA^2)
+#NHL22
+
+
+## regression
+
+pyth_lm <- lm(wpc ~ pyth, data = NHL22)
+summary(pyth_lm)
+
+
+
+```
+
+
+wpc = Intercept + coef x pyth
+
+- For every one unit increase in pyth, the value of wpc goes up by 1.15
+- Pythagorean Expectation can account for 80.0% of the variation in win percentage
+
+
+```{r}
+
+# Create the linear regression model
+pyth_lm <- lm(wpc ~ pyth, data = NHL22)
+
+# Create a scatter plot with regression line using ggplot2
+regression_plot <- ggplot(NHL22, aes(x = pyth, y = wpc)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "navyblue") +
+  labs(x = "Pyth", y = "Winning Percentage", title = "Regression: wpc ~ pyth") +
+  theme_minimal()
+
+# Print the plot
+print(regression_plot)
+
+
+
+### comparing teams 
+
+# Create a scatter plot with regression line for each team
+regression_plot <- ggplot(NHL22, aes(x = pyth, y = wpc, label = team)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "skyblue") +
+  geom_text_repel(
+    nudge_x = 0.02, nudge_y = 0.005,
+    segment.size = 0.2, segment.color = "grey50"
+  ) +
+  labs(x = "Pyth", y = "Winning Percentage", title = "Regression: wpc ~ pyth") +
+  theme_minimal()
+
+# Print the plot
+print(regression_plot)
+
+
+```
