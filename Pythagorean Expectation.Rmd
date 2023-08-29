@@ -427,13 +427,17 @@ keyvars <- keyvars %>%
 # Print the sorted keyvars data frame
 print(keyvars)
 
+keyvars_ext<-keyvars %>% 
+  mutate(difference = (wpc2-wpc1)*100)
+
 ```
 
 
 #### Conclusion
 
-We can see from the correlation matrix that win percentage in the second half of the season is correlated with win percentage in the first half of the season - the correlation coefficient is +0.653. It's not surprising that performance in the first half of the season is to an extent predictive of performance in the second half. But there are also clearly things that can change.
-When we sort the teams from highest to lowest send half of season win percentage, we find a mixed picture. Some clubs perform with less than one percentage point difference in each half, e.g. The Brave (ATL), the Padres (SDN) or the Orioles (BAL), while others differed by more than ten percentage points, e.g. the Rays (TBA), the Mets (NYN) or the Mariners (SEA).
+We can see from the correlation matrix that win percentage for the second half of games is correlated with win percentage in the first half of games - the correlation coefficient is +0.983. That is a heavy correlation and suggests that the first half of games is highly predictive of the second half of games. Pythagorean Expectation is slightly less effective at forecasting - the correlation coefficient is lower, at +0.960. Though, the difference between predictor variables is not large. 
 
-We could simply use first half win percentage as a predictor of second half win percentage, but when we look at the correlation matrix we can see that the Pythagorean Expectation is an even better forecast - the correlation coefficient is higher, at +0.691. To be sure, the difference is not large, but it is slightly better. This was, in fact, the initial impetus for Bill James when introducing the statistic. He argued that a win could ride on lucky hit and the difference of just one run, which made wins a less reliable predictor than the aggregate capacity to produce runs and limit conceding runs. As in many aspects of baseball analysis, our data show that James was quite right.
+When we sort the teams from highest to lowest send half of season win percentage, we find a mixed picture. Some clubs perform with less than one percentage point difference in each half, e.g. The ATL (Atlanta Thrashers), ARI (Arizona Coyotes), MIN (Minnesota Wild), while others differed up to 6 percentage points, e.g. BUF (Buffalo Sabres), and VGK (Vegas Golden Knights).
+
+ 
 
