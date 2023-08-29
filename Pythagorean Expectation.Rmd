@@ -26,6 +26,7 @@ knitr::opts_chunk$set(echo = TRUE, warning= FALSE, message= FALSE)
 library(tidyverse)    # For data manipulation, plotting, etc. 
 library(here)    # For reproducible data importation 
 library(janitor)      # For text data manipulation
+library(psych)
 
 ```
 
@@ -288,3 +289,151 @@ print(regression_plot)
 
 
 ```
+
+
+### Forecasting
+
+One of the main reasons that people are interested in sports analytics is that they want to predict the outcome of events that have not yet occurred. Thus we want to go beyond "explanation" - finding the model that best fits the data (i.e. history) and to use our model to forecast the outcome of games in the future.
+Pythagorean Expectation can be thought of as a forecast. At any point in the season, it can be calculated based on the games already played. Using it as a forecast would amount to saying that from that point onward the win percentage of the team would equal the Pythagorean Expectation to date.
+In this notebook, we're going to see if it is a good forecasting model in the context of the NHL data we examined earlier. 
+
+```{r}
+
+# Create a subset of NHL22 data frame containing selected columns
+nhl_home_c <- pe_nhl_score[c('home_team_code', 'home_team_goals', 'away_team_goals', 'count', 'game_id')]
+
+# Add a new column 'home' with value 1
+nhl_home_c$home <- 1
+# Rename columns
+colnames(nhl_home_c) <- c('team', 'R', 'RA', 'count', 'game_id')
+
+
+# Create a subset of NHL22 data frame containing selected columns
+nhl_away_c <- pe_nhl_score[c('away_team_code', 'away_team_goals', 'home_team_goals', 'count', 'game_id')]
+
+# Add a new column 'home' with value 1
+nhl_away_c$home <- 0
+# Rename columns
+colnames(nhl_away_c) <- c('team', 'R', 'RA', 'count', 'game_id')
+
+
+NHL22_c <- rbind(nhl_home_c, nhl_away_c) %>% 
+  select(-'...6')
+  
+### define a win
+
+NHL22_c$win <- ifelse(NHL22_c$R > NHL22_c$RA, 1, 0)
+
+
+### split data 
+
+# Generate a random vector of indices to split the data frame
+split_indices <- sample(nrow(NHL22_c), nrow(NHL22_c) / 2)
+
+# Create the first half
+Half1 <- NHL22_c[split_indices, ]
+describe(Half1)
+
+# Create the second half
+Half2 <- NHL22_c[-split_indices, ]
+describe(Half2)
+
+
+# Group by 'team' and summarize data for the first half of the season
+Half1perf <- Half1 %>%
+  group_by(team) %>%
+  summarize(count1 = sum(count),
+            win1 = sum(win),
+            R1 = sum(R),
+            RA1 = sum(RA)) %>%
+  ungroup() %>%
+  rename(count = count1, win = win1, R = R1, RA = RA1)
+
+# Calculate win percentage and Pythagorean Expectation for the first half of the season
+Half1perf <- Half1perf %>%
+  mutate(wpc1 = win / count,
+         pyth1 = R^2 / (R^2 + RA^2))
+
+# Group by 'team' and summarize data for the second half of the season
+Half2perf <- Half2 %>%
+  group_by(team) %>%
+  summarize(count2 = sum(count),
+            win2 = sum(win),
+            R2 = sum(R),
+            RA2 = sum(RA)) %>%
+  ungroup() %>%
+  rename(count = count2, win = win2, R = R2, RA = RA2)
+
+# Calculate win percentage and Pythagorean Expectation for the second half of the season
+Half2perf <- Half2perf %>%
+  mutate(wpc2 = win / count,
+         pyth2 = R^2 / (R^2 + RA^2))
+
+
+# Merge the two data frames on the 'team' column
+Half2predictor <- merge(Half1perf, Half2perf, by = "team")
+
+# Create a scatter plot
+scatter_plot <- ggplot(data = Half2predictor, aes(x = pyth1, y = wpc2)) +
+  geom_point(color = "#1f77b4", size = 4, alpha = 0.7) +
+  theme_minimal() +
+  labs(x = "Pythagorean Expectation (First Half)",
+       y = "Win Percentage (Second Half)",
+       title = "Pythagorean Expectation vs. Win Percentage") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+# Display the scatter plot
+print(scatter_plot)
+
+
+## create a scatter plot comparing win percentage from the first half of the season against win percentage in the second half of the season
+
+# Create a scatter plot
+scatter_plot <- ggplot(data = Half2predictor, aes(x = wpc1, y = wpc2)) +
+  geom_point(color = "#1f77b4", size = 4, alpha = 0.7) +
+  theme_minimal() +
+  labs(x = "Win Percentage (First Half)",
+       y = "Win Percentage (Second Half)",
+       title = "Win Percentage Comparison") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Display the scatter plot
+print(scatter_plot)
+
+
+# The two plots look similar
+# We can be more precise still if we compare the correlation coefficients. The first row of the table shows the 
+# correlation of win percentage in second half of the season against itself, win percentage in the first half of the season,
+# Pythagorean Expectation in the first half of the season, and Pythagorean Expectation in the second half of the season.
+# Our focus is on comparing the second and third columns.
+
+# Extract the relevant columns
+keyvars <- Half2predictor[c('team', 'wpc2', 'wpc1', 'pyth1', 'pyth2')]
+
+# Calculate the correlation coefficients
+correlation_matrix <- cor(keyvars[, c('wpc2', 'wpc1', 'pyth1', 'pyth2')])
+
+# Print the correlation matrix
+print(correlation_matrix)
+
+# We can also sort the variables to show for each club how close the relationships are between the first and second half
+# of the season
+
+# Sort the data frame by 'wpc2' column in descending order
+keyvars <- keyvars %>%
+  arrange(desc(wpc2))
+
+# Print the sorted keyvars data frame
+print(keyvars)
+
+```
+
+
+#### Conclusion
+
+We can see from the correlation matrix that win percentage in the second half of the season is correlated with win percentage in the first half of the season - the correlation coefficient is +0.653. It's not surprising that performance in the first half of the season is to an extent predictive of performance in the second half. But there are also clearly things that can change.
+When we sort the teams from highest to lowest send half of season win percentage, we find a mixed picture. Some clubs perform with less than one percentage point difference in each half, e.g. The Brave (ATL), the Padres (SDN) or the Orioles (BAL), while others differed by more than ten percentage points, e.g. the Rays (TBA), the Mets (NYN) or the Mariners (SEA).
+
+We could simply use first half win percentage as a predictor of second half win percentage, but when we look at the correlation matrix we can see that the Pythagorean Expectation is an even better forecast - the correlation coefficient is higher, at +0.691. To be sure, the difference is not large, but it is slightly better. This was, in fact, the initial impetus for Bill James when introducing the statistic. He argued that a win could ride on lucky hit and the difference of just one run, which made wins a less reliable predictor than the aggregate capacity to produce runs and limit conceding runs. As in many aspects of baseball analysis, our data show that James was quite right.
+
