@@ -679,3 +679,72 @@ wpc = Intercept + coef x pyth
 - For every one unit increase in pyth, the value of wpc goes up by 1.33
 - Pythagorean Expectation can account for 81.5% of the variation in win percentage
 
+
+```{r}
+
+library(cowplot)
+
+pp_goals<- ggplot(pp_season, aes(season, goalsFor/games_played, group = 1)) +
+  geom_line(aes(group = team, color = division), alpha = 2/3) + 
+  geom_line(stat = 'summary', fun.y = 'mean', size = .9, color = 'red') +
+  scale_color_brewer(palette = 'Blues', direction = -1) +
+  labs(x = 'Season (Start Year)',
+       y = 'Season Power Play Goals (5v4)/ Games Played',
+       caption = 'Each team is a separate line; red line is the average') +
+  guides(color = guide_legend(title = 'Division')) +
+  scale_x_continuous(limits = c(2008, 2022), breaks = c(2008:2022)) +
+  theme_minimal()
+
+heatmap<- ggplot(canucks_cors_long, aes(x = Var1, y = Var2, fill = value)) +
+  geom_raster() + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title = element_blank()
+        ) +
+  scale_fill_distiller(palette = "GnBu", 
+                       limits = c(-1, 1), 
+                       name = "Correlation"
+                       )
+
+Can_performance<- ggplot(canucks_data_long, aes(factor(season), Val_Zscore)) +
+  geom_path(aes(group = 1), color = rdgy[8]) +
+  geom_point(aes(color = sig), size = 1.75) +
+  scale_color_manual(values = c(rdgy[3], rdgy[10]), name = "Z-Score") +
+  scale_y_continuous(breaks = c(-2, 0, 2), minor_breaks = NULL) +
+  coord_cartesian(ylim = c(-3,3)) +
+  theme_minimal() + 
+  labs(x = "\n Season", 
+       y = "\n Measurement (Z-Score)",
+       title = "Canucks Performance 2007-2023"
+       ) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom"
+        )+
+  facet_wrap(~Meas, nrow = 5)
+
+pp_success<- ggplot(model_data, aes(x = season, y = goalsFor_per_game)) +
+  geom_point(color = "blue1", alpha=.02, size=3) +
+  geom_line(aes(y = fitted_values), color = "darkgreen", size=1.2) +
+  labs(
+    x = "Season",
+    y = "Average Power Play Goals per Game"
+  ) +
+  theme_minimal()
+
+
+
+rankings<- goal_preds_joined %>% 
+  mutate(goal_oe = goal- `1`) %>% #goals over expected
+  group_by(shooterName) %>% 
+  summarize(goals_oe_made = sum(goal_oe)) %>% 
+  arrange(-goals_oe_made) %>% 
+  rename("Goals Made Over Expectation" = goals_oe_made) %>% 
+  rename("Shooter Name" = shooterName)
+
+player_ranked<- kable(head(rankings)) %>%
+    kable_styling(bootstrap_options = c('striped', 'hover', 'responsive', 'condensed'))
+
+
+```
+
+
